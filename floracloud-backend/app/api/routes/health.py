@@ -18,7 +18,7 @@ async def health_check():
 
 @router.get("/download/floracloud.apk")
 async def download_apk():
-    apk_path = Path("/tmp/floracloud.apk")
+    apk_path = Path("/data/floracloud/floracloud.apk")
     if not apk_path.exists():
         raise HTTPException(status_code=404, detail="APK não encontrado no servidor")
     return FileResponse(
