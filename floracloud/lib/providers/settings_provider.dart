@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 class SettingsProvider extends ChangeNotifier {
   String _serverUrl = 'http://localhost:8000';
   bool _isConnected = false;
+  String? connectionError;
 
   String get serverUrl => _serverUrl;
   bool get isConnected => _isConnected;
@@ -26,7 +27,13 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<bool> checkConnection() async {
-    _isConnected = await apiService.checkHealth();
+    try {
+      _isConnected = await apiService.checkHealth();
+      if (_isConnected) connectionError = null;
+    } catch (e) {
+      _isConnected = false;
+      connectionError = e.toString();
+    }
     notifyListeners();
     return _isConnected;
   }

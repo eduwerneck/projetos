@@ -210,11 +210,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               )
             else
-              const Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.error_outline, color: Colors.red, size: 16),
-                  SizedBox(width: 6),
-                  Text('Servidor offline', style: TextStyle(color: Colors.red)),
+                  const Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 16),
+                      SizedBox(width: 6),
+                      Text('Servidor offline', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                  if (settings.connectionError != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      settings.connectionError!,
+                      style: const TextStyle(color: Colors.red, fontSize: 10),
+                    ),
+                  ],
                 ],
               ),
           ],

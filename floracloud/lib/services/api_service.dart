@@ -165,18 +165,15 @@ class ApiService {
   }
 
   Future<bool> checkHealth() async {
-    try {
-      final response = await _dio.get(
-        '$baseUrl/health',
-        options: Options(
-          receiveTimeout: const Duration(seconds: 5),
-          sendTimeout: const Duration(seconds: 5),
-        ),
-      );
-      return response.statusCode == 200;
-    } catch (_) {
-      return false;
-    }
+    final response = await _dio.get(
+      '$baseUrl/health',
+      options: Options(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
+      ),
+    );
+    return response.statusCode == 200;
   }
 }
 
