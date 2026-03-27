@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 
 router = APIRouter()
 
@@ -12,3 +14,15 @@ async def health_check():
         "service": "FloraCloud API",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@router.get("/download/floracloud.apk")
+async def download_apk():
+    apk_path = Path("/tmp/floracloud.apk")
+    if not apk_path.exists():
+        raise HTTPException(status_code=404, detail="APK não encontrado no servidor")
+    return FileResponse(
+        apk_path,
+        filename="floracloud.apk",
+        media_type="application/vnd.android.package-archive",
+    )
