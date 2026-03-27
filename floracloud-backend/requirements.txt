@@ -1,0 +1,26 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+pydantic-settings==2.7.0
+celery==5.4.0
+redis==5.2.1
+python-multipart==0.0.20
+aiofiles==24.1.0
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
+Pillow==11.0.0
+plyfile==1.1
+scipy==1.14.1
+python-dotenv==1.0.1
+loguru==0.7.2
+
+# Deep learning – depth estimation
+# Use CPU-only builds to avoid CUDA overhead on servers without GPU
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1+cpu
+torchvision==0.19.1+cpu
+transformers==4.46.3
+huggingface-hub==0.26.3
+
+# pycolmap is installed via conda in Docker (see Dockerfile)
+# To install locally: conda install -c conda-forge pycolmap
