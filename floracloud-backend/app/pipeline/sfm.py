@@ -19,10 +19,12 @@ def run_sfm(image_dir: Path, output_dir: Path) -> pycolmap.Reconstruction:
     sparse_dir.mkdir(exist_ok=True)
 
     logger.info(f"SfM – extração de features: {image_dir}")
+    extraction_options = pycolmap.FeatureExtractionOptions()
+    extraction_options.sift.max_num_features = 8192
     pycolmap.extract_features(
         database_path=db_path,
         image_path=image_dir,
-        sift_options={"max_num_features": 8192},
+        extraction_options=extraction_options,
     )
 
     logger.info("SfM – matching exaustivo...")
