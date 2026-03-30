@@ -343,13 +343,12 @@ class _UploadScreenState extends State<UploadScreen> {
             message: 'Conectando ao servidor...',
           ));
 
-      // Upload photos (in real app, pass actual File lists)
       await api.uploadPhotos(
         sessionId: serverSessionId,
-        calibrationEntryPhotos: [],
+        calibrationEntryPhotos: widget.session.calibrationEntryPhotoPaths.map((p) => File(p)).toList(),
         calibrationMidpointPhotos: [],
-        calibrationExitPhotos: [],
-        fieldPhotos: [],
+        calibrationExitPhotos: widget.session.calibrationExitPhotoPaths.map((p) => File(p)).toList(),
+        fieldPhotos: widget.session.fieldPhotoPaths.map((p) => File(p)).toList(),
         onProgress: (p) => setState(() => _progress = p),
       );
 

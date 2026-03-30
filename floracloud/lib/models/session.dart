@@ -62,6 +62,9 @@ class FieldSession {
   String? errorMessage;
   VARIResult? variResult;
   double plotSizeMeters;
+  List<String> fieldPhotoPaths;
+  List<String> calibrationEntryPhotoPaths;
+  List<String> calibrationExitPhotoPaths;
 
   FieldSession({
     required this.id,
@@ -79,6 +82,9 @@ class FieldSession {
     this.errorMessage,
     this.variResult,
     this.plotSizeMeters = 30.0,
+    this.fieldPhotoPaths = const [],
+    this.calibrationEntryPhotoPaths = const [],
+    this.calibrationExitPhotoPaths = const [],
   });
 
   factory FieldSession.fromJson(Map<String, dynamic> json) {
@@ -110,6 +116,9 @@ class FieldSession {
           ? VARIResult.fromJson(json['vari_result'])
           : null,
       plotSizeMeters: json['plot_size_meters']?.toDouble() ?? 30.0,
+      fieldPhotoPaths: List<String>.from(json['field_photo_paths'] ?? []),
+      calibrationEntryPhotoPaths: List<String>.from(json['calibration_entry_photo_paths'] ?? []),
+      calibrationExitPhotoPaths: List<String>.from(json['calibration_exit_photo_paths'] ?? []),
     );
   }
 
@@ -129,6 +138,9 @@ class FieldSession {
         'error_message': errorMessage,
         'vari_result': variResult?.toJson(),
         'plot_size_meters': plotSizeMeters,
+        'field_photo_paths': fieldPhotoPaths,
+        'calibration_entry_photo_paths': calibrationEntryPhotoPaths,
+        'calibration_exit_photo_paths': calibrationExitPhotoPaths,
       };
 
   String toJsonString() => jsonEncode(toJson());

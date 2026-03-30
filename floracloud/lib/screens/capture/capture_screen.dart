@@ -466,7 +466,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
     final updated = widget.session
       ..photoCount = totalPhotos
       ..calibrationPhotos = totalCalibration
-      ..status = SessionStatus.captured;
+      ..status = SessionStatus.captured
+      ..fieldPhotoPaths = _fieldPhotos.map((p) => p.localPath).toList()
+      ..calibrationEntryPhotoPaths = _calibrationEntryPhotos.map((p) => p.localPath).toList()
+      ..calibrationExitPhotoPaths = _calibrationExitPhotos.map((p) => p.localPath).toList();
 
     await context.read<SessionProvider>().updateSession(updated);
 
