@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import '../../models/session.dart';
 import '../../models/field_photo.dart';
@@ -438,17 +440,26 @@ class _CaptureScreenState extends State<CaptureScreen> {
     }
   }
 
-  void _addPhoto(String path) {
+  Future<void> _addPhoto(String tempPath) async {
     final type = _currentStep == _CaptureStep.calibrationEntry
         ? PhotoType.calibrationEntry
         : _currentStep == _CaptureStep.field
             ? PhotoType.field
             : PhotoType.calibrationExit;
 
+    // Copy to permanent app directory so photo survives cache clears
+    final appDir = await getApplicationDocumentsDirectory();
+    final photoDir = Directory(p.join(appDir.path, 'floracloud_photos', widget.session.id));
+    await photoDir.create(recursive: true);
+    final id = const Uuid().v4();
+    final ext = p.extension(tempPath).isNotEmpty ? p.extension(tempPath) : '.jpg';
+    final permanentPath = p.join(photoDir.path, '$id$ext');
+    await File(tempPath).copy(permanentPath);
+
     final photo = FieldPhoto(
-      id: const Uuid().v4(),
+      id: id,
       sessionId: widget.session.id,
-      localPath: path,
+      localPath: permanentPath,
       type: type,
       capturedAt: DateTime.now(),
     );
