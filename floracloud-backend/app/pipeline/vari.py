@@ -2,60 +2,79 @@
 VARI – Visible Atmospherically Resistant Index
   VARI = (G - R) / (G + R - B)
 
-Input: (N, 6) float32 array [X, Y, Z, R, G, B].
+Input: calibrated field images directory.
 Output: statistics dict ready to populate VARIResult.
 """
+from pathlib import Path
 from typing import Any, Dict
 
 import numpy as np
 from loguru import logger
+from PIL import Image
+
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
+STEP = 4  # pixel subsampling step (every 4th pixel)
 
 
-def compute_vari(
-    points: np.ndarray,
+def compute_vari_from_images(
+    calibrated_dir: Path,
     correction_factors: Dict[str, float],
 ) -> Dict[str, Any]:
-    if points.shape[0] == 0:
-        raise ValueError("Nenhum ponto para calcular VARI")
+    """Compute VARI statistics from all calibrated field images."""
+    image_files = [
+        f for f in sorted(calibrated_dir.iterdir())
+        if f.suffix.lower() in IMAGE_EXTS
+    ]
+    if not image_files:
+        raise ValueError(f"Nenhuma imagem encontrada em {calibrated_dir}")
 
-    xyz = points[:, :3]
-    rgb = points[:, 3:6].astype(np.float32).copy()
+    all_vari: list[np.ndarray] = []
 
-    # Apply radiometric correction (factors already applied to saved JPEGs,
-    # but we keep this as a second-pass safeguard for any residual bias)
-    rgb[:, 0] *= correction_factors.get("R", 1.0)
-    rgb[:, 1] *= correction_factors.get("G", 1.0)
-    rgb[:, 2] *= correction_factors.get("B", 1.0)
-    rgb = np.clip(rgb, 0, 255)
+    for img_path in image_files:
+        try:
+            pil = Image.open(img_path).convert("RGB")
+            arr = np.array(pil, dtype=np.float32)
+        except Exception as e:
+            logger.warning(f"Ignorando {img_path.name}: {e}")
+            continue
 
-    # Normalize to [0, 1]
-    r = rgb[:, 0] / 255.0
-    g = rgb[:, 1] / 255.0
-    b = rgb[:, 2] / 255.0
+        # Subsample pixels
+        r = arr[::STEP, ::STEP, 0]
+        g = arr[::STEP, ::STEP, 1]
+        b = arr[::STEP, ::STEP, 2]
 
-    # VARI
-    denom = g + r - b
-    vari = np.where(np.abs(denom) > 1e-6, (g - r) / denom, 0.0)
+        # Apply radiometric correction factors
+        r = np.clip(r * correction_factors.get("R", 1.0), 0, 255)
+        g = np.clip(g * correction_factors.get("G", 1.0), 0, 255)
+        b = np.clip(b * correction_factors.get("B", 1.0), 0, 255)
 
-    # Remove outliers (sky, sensor noise)
-    valid = (vari >= -1.0) & (vari <= 1.0)
-    vari = vari[valid]
-    xyz_valid = xyz[valid]
+        # Normalize to [0, 1]
+        r /= 255.0
+        g /= 255.0
+        b /= 255.0
 
-    if vari.size == 0:
-        raise ValueError("Todos os pontos VARI estão fora do intervalo válido [-1, 1]")
+        # VARI = (G - R) / (G + R - B)
+        denom = g + r - b
+        vari = np.where(np.abs(denom) > 1e-6, (g - r) / denom, 0.0)
+
+        # Keep valid range
+        valid = (vari >= -1.0) & (vari <= 1.0)
+        all_vari.append(vari[valid].ravel())
+        logger.info(f"  {img_path.name}: {valid.sum():,} pixels VARI válidos")
+
+    if not all_vari:
+        raise ValueError("Nenhum pixel VARI válido nas imagens calibradas")
+
+    vari_all = np.concatenate(all_vari)
 
     result: Dict[str, Any] = {
-        "mean": float(np.mean(vari)),
-        "median": float(np.median(vari)),
-        "std_dev": float(np.std(vari)),
-        "min": float(np.min(vari)),
-        "max": float(np.max(vari)),
-        "point_count": int(vari.size),
-        "stratified_by_height": _stratify(xyz_valid[:, 2], vari),
-        # Private fields used by export.py (not serialized to VARIResult)
-        "_vari_values": vari,
-        "_valid_mask": valid,
+        "mean": float(np.mean(vari_all)),
+        "median": float(np.median(vari_all)),
+        "std_dev": float(np.std(vari_all)),
+        "min": float(np.min(vari_all)),
+        "max": float(np.max(vari_all)),
+        "point_count": int(vari_all.size),
+        "stratified_by_height": {},  # sem 3D por enquanto
     }
 
     logger.info(
@@ -63,22 +82,3 @@ def compute_vari(
         f"n={result['point_count']:,}"
     )
     return result
-
-
-def _stratify(z: np.ndarray, vari: np.ndarray, n_bins: int = 5) -> Dict[str, float]:
-    z_min, z_max = float(z.min()), float(z.max())
-    z_range = z_max - z_min
-
-    if z_range < 0.01:
-        return {"total": float(np.mean(vari))}
-
-    bin_size = z_range / n_bins
-    strat: Dict[str, float] = {}
-    for i in range(n_bins):
-        lo = z_min + i * bin_size
-        hi = lo + bin_size
-        label = f"{lo:.1f}m-{hi:.1f}m"
-        mask = (z >= lo) & (z < hi)
-        strat[label] = float(np.mean(vari[mask])) if mask.any() else 0.0
-
-    return strat

@@ -21,15 +21,12 @@ celery_app.conf.update(
 
 @celery_app.task(bind=True, name="floracloud.run_pipeline")
 def run_pipeline(self, session_id: str):
-    """Full FloraCloud pipeline: calibration → SfM → depth → VARI → export."""
+    """FloraCloud pipeline: calibration → VARI → export."""
     from datetime import datetime, timezone
 
     from ..models.schemas import SessionStatus, VARIResult
     from ..pipeline.calibration import calibrate_photos
-    from ..pipeline.depth import estimate_depth_and_fuse
-    from ..pipeline.export import export_results
-    from ..pipeline.sfm import run_sfm
-    from ..pipeline.vari import compute_vari
+    from ..pipeline.vari import compute_vari_from_images
     from ..storage.manager import storage
 
     def stage(name: str, progress: float, message: str):
@@ -47,7 +44,7 @@ def run_pipeline(self, session_id: str):
         results_dir = storage.get_results_dir(session_id)
 
         # ── 1. Radiometric calibration ────────────────────────────────────────
-        stage("calibration", 0.05, "Calibração radiométrica com painel ArUco...")
+        stage("calibration", 0.10, "Calibração radiométrica com painel ArUco...")
         cal_entry = storage.get_photos_dir(session_id, "calibration_entry")
         cal_exit = storage.get_photos_dir(session_id, "calibration_exit")
         field_dir = storage.get_photos_dir(session_id, "field")
@@ -56,23 +53,20 @@ def run_pipeline(self, session_id: str):
 
         correction_factors = calibrate_photos(cal_entry, cal_exit, calibrated_dir, field_dir)
 
-        # ── 2. Structure from Motion ──────────────────────────────────────────
-        stage("sfm", 0.20, "Extração SIFT + reconstrução 3D (pycolmap)...")
-        sfm_dir = results_dir / "sfm"
-        sfm_dir.mkdir(exist_ok=True)
-        reconstruction = run_sfm(calibrated_dir, sfm_dir)
+        # ── 2. VARI from calibrated images ────────────────────────────────────
+        stage("vari", 0.50, "Calculando índice VARI nas imagens calibradas...")
+        vari_data = compute_vari_from_images(calibrated_dir, correction_factors)
 
-        # ── 3. Dense depth estimation ─────────────────────────────────────────
-        stage("depth", 0.45, "Estimativa densa de profundidade (Depth Anything V2)...")
-        points_xyzrgb = estimate_depth_and_fuse(reconstruction, calibrated_dir, results_dir)
-
-        # ── 4. VARI ───────────────────────────────────────────────────────────
-        stage("vari", 0.75, "Calculando índice VARI...")
-        vari_data = compute_vari(points_xyzrgb, correction_factors)
-
-        # ── 5. Export ─────────────────────────────────────────────────────────
-        stage("export", 0.90, "Exportando nuvem de pontos .ply e relatório JSON...")
-        ply_path, report_path = export_results(points_xyzrgb, vari_data, results_dir, session_id)
+        # ── 3. Save report JSON ───────────────────────────────────────────────
+        stage("export", 0.90, "Salvando relatório JSON...")
+        import json
+        report = {
+            "session_id": session_id,
+            "processed_at": datetime.now(timezone.utc).isoformat(),
+            "vari": {k: v for k, v in vari_data.items()},
+        }
+        report_path = results_dir / "report.json"
+        report_path.write_text(json.dumps(report, indent=2))
 
         # ── Save results to session ───────────────────────────────────────────
         vari_result = VARIResult(
@@ -83,7 +77,7 @@ def run_pipeline(self, session_id: str):
             max=vari_data["max"],
             point_count=vari_data["point_count"],
             stratified_by_height=vari_data["stratified_by_height"],
-            ply_file_path=str(ply_path),
+            ply_file_path=None,
             report_json_path=str(report_path),
             processed_at=datetime.now(timezone.utc).isoformat(),
         )
