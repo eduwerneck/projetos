@@ -156,6 +156,10 @@ class ApiService {
     }
   }
 
+  String getVariMapUrl(String sessionId) {
+    return '$baseUrl/api/sessions/$sessionId/vari-map';
+  }
+
   Future<String> getPlyDownloadUrl(String sessionId) {
     return Future.value('$baseUrl/api/sessions/$sessionId/export/ply');
   }

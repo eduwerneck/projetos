@@ -82,6 +82,10 @@ class StorageManager:
         p = self._results_dir(session_id) / "report.json"
         return p if p.exists() else None
 
+    def get_vari_map_path(self, session_id: str) -> Optional[Path]:
+        p = self._results_dir(session_id) / "vari_map.png"
+        return p if p.exists() else None
+
     # ── bootstrap ─────────────────────────────────────────────────────────────
 
     def ensure_dirs(self) -> None:

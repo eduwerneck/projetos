@@ -37,6 +37,14 @@ async def get_results(session_id: str):
     return session.vari_result
 
 
+@router.get("/sessions/{session_id}/vari-map")
+async def get_vari_map(session_id: str):
+    path = storage.get_vari_map_path(session_id)
+    if not path:
+        raise HTTPException(status_code=404, detail="Mapa VARI não encontrado")
+    return FileResponse(path, media_type="image/png")
+
+
 @router.get("/sessions/{session_id}/export/ply")
 async def export_ply(session_id: str):
     path = storage.get_ply_path(session_id)

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../models/session.dart';
 import '../../config/app_theme.dart';
 import '../../widgets/vari_indicator.dart';
+import '../../providers/settings_provider.dart';
 
 class ResultsScreen extends StatelessWidget {
   final FieldSession session;
@@ -42,6 +44,8 @@ class ResultsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 _buildVARISummaryCard(result),
+                const SizedBox(height: 16),
+                _buildVariMapCard(context),
                 const SizedBox(height: 16),
                 _buildStatisticsCard(result),
                 const SizedBox(height: 16),
@@ -95,6 +99,82 @@ class ResultsScreen extends StatelessWidget {
               '${result.pointCount} pontos 3D',
               style: const TextStyle(
                   fontSize: 12, color: AppTheme.textLight),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVariMapCard(BuildContext context) {
+    final serverUrl = context.read<SettingsProvider>().serverUrl;
+    final mapUrl = '$serverUrl/api/sessions/${session.id}/vari-map';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(
+              icon: Icons.image_outlined,
+              title: 'Mapa VARI — Imagem Colorida',
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Vermelho = estresse  ·  Amarelo = neutro  ·  Verde = vigor',
+              style: TextStyle(fontSize: 11, color: AppTheme.textLight),
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                mapUrl,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    height: 160,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          value: progress.expectedTotalBytes != null
+                              ? progress.cumulativeBytesLoaded /
+                                  progress.expectedTotalBytes!
+                              : null,
+                          color: AppTheme.primaryGreen,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Carregando mapa...',
+                            style: TextStyle(
+                                fontSize: 12, color: AppTheme.textLight)),
+                      ],
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stack) => Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.image_not_supported_outlined,
+                          color: AppTheme.textLight, size: 32),
+                      SizedBox(height: 8),
+                      Text('Mapa não disponível ainda',
+                          style: TextStyle(
+                              fontSize: 12, color: AppTheme.textLight)),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),

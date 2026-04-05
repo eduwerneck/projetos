@@ -26,7 +26,7 @@ def run_pipeline(self, session_id: str):
 
     from ..models.schemas import SessionStatus, VARIResult
     from ..pipeline.calibration import calibrate_photos
-    from ..pipeline.vari import compute_vari_from_images
+    from ..pipeline.vari import compute_vari_from_images, generate_vari_map
     from ..storage.manager import storage
 
     def stage(name: str, progress: float, message: str):
@@ -57,7 +57,16 @@ def run_pipeline(self, session_id: str):
         stage("vari", 0.50, "Calculando índice VARI nas imagens calibradas...")
         vari_data = compute_vari_from_images(calibrated_dir, correction_factors)
 
-        # ── 3. Save report JSON ───────────────────────────────────────────────
+        # ── 3. VARI colormap image ────────────────────────────────────────────
+        stage("vari_map", 0.70, "Gerando mapa colorido VARI...")
+        try:
+            vari_map_path = generate_vari_map(calibrated_dir, correction_factors, results_dir)
+            vari_data["vari_map_path"] = str(vari_map_path)
+        except Exception as e:
+            logger.warning(f"Falha ao gerar mapa VARI: {e}")
+            vari_data["vari_map_path"] = None
+
+        # ── 4. Save report JSON ───────────────────────────────────────────────
         stage("export", 0.90, "Salvando relatório JSON...")
         import json
         report = {
