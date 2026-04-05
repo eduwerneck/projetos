@@ -61,6 +61,27 @@ def _get_intrinsics(camera: pycolmap.Camera) -> Tuple[float, float, float, float
     return f, f, w / 2.0, h / 2.0
 
 
+def _get_pose(image: pycolmap.Image):
+    """Get (R, t) from pycolmap Image, compatible with multiple API versions."""
+    try:
+        pose = image.cam_from_world
+        if callable(pose):
+            pose = pose()
+        return np.array(pose.rotation.matrix()), np.array(pose.translation)
+    except AttributeError:
+        pass
+    # Fallback: older pycolmap uses qvec/tvec directly
+    try:
+        R = pycolmap.qvec_to_rotmat(image.qvec)
+        return R, np.array(image.tvec)
+    except Exception:
+        pass
+    # Last resort: rotation_matrix() method
+    R = np.array(image.rotation_matrix())
+    t = np.array(image.tvec)
+    return R, t
+
+
 def _scale_depth(
     depth_rel: np.ndarray,
     image: pycolmap.Image,
@@ -69,8 +90,7 @@ def _scale_depth(
     img_h: int,
 ) -> np.ndarray:
     """Scale relative depth to metric using visible SfM sparse points."""
-    R = image.cam_from_world.rotation.matrix()
-    t = image.cam_from_world.translation
+    R, t = _get_pose(image)
 
     sfm_d, pred_d = [], []
     for point2D in image.points2D:
@@ -133,8 +153,7 @@ def estimate_depth_and_fuse(
         fx, fy, cx, cy = _get_intrinsics(camera)
 
         # Pose: cam_from_world  →  R, t  →  R_inv (= R^T), t_inv
-        R = image.cam_from_world.rotation.matrix()
-        t = image.cam_from_world.translation
+        R, t = _get_pose(image)
         R_inv = R.T
         t_inv = -(R_inv @ t)
 
