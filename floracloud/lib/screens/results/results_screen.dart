@@ -107,7 +107,7 @@ class ResultsScreen extends StatelessWidget {
   }
 
   Widget _buildVariMapCard(BuildContext context) {
-    final serverUrl = context.read<SettingsProvider>().serverUrl;
+    final serverUrl = context.watch<SettingsProvider>().serverUrl;
     final mapUrl = '$serverUrl/api/sessions/${session.id}/vari-map';
 
     return Card(
