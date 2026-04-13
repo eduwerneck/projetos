@@ -21,10 +21,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final _picker = ImagePicker();
 
   Future<void> _pick(String slot) async {
-    final xFile = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 95,
-    );
+    final source = await _showSourceDialog();
+    if (source == null) return;
+    final xFile = await _picker.pickImage(source: source, imageQuality: 95);
     if (xFile == null) return;
     final file = File(xFile.path);
     setState(() {
@@ -33,6 +32,41 @@ class _HomeScreenState extends State<HomeScreen> {
       if (slot == 'field') _field = file;
       _error = null;
     });
+  }
+
+  Future<ImageSource?> _showSourceDialog() async {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF2E7D32)),
+                title: const Text('Câmera'),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF2E7D32)),
+                title: const Text('Galeria'),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _analyze() async {

@@ -1,122 +1,178 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../engine/vari_engine.dart';
 
-class ResultScreen extends StatelessWidget {
+class ResultScreen extends StatefulWidget {
   final VARIResult result;
-
   const ResultScreen({super.key, required this.result});
 
   @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  final _exportKey = GlobalKey();
+  bool _exporting = false;
+
+  Future<void> _export() async {
+    setState(() => _exporting = true);
+    try {
+      final boundary = _exportKey.currentContext!.findRenderObject()
+          as RenderRepaintBoundary;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = byteData!.buffer.asUint8List();
+
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/florafield_vari_${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(bytes);
+
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'image/png')],
+        text: 'Resultado VARI — FloraField\nMédia: ${widget.result.mean.toStringAsFixed(4)} (${widget.result.vigorLabel})',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao exportar: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final r = widget.result;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Resultado VARI'),
+        actions: [
+          _exporting
+              ? const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+              : IconButton(
+                  icon: const Icon(Icons.share),
+                  tooltip: 'Exportar imagem',
+                  onPressed: _export,
+                ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // ── VARI Map + Color Ramp ───────────────────────────────────────
+            // Exportable card
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Mapa VARI',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    const SizedBox(height: 12),
-                    Row(
+                child: RepaintBoundary(
+                  key: _exportKey,
+                  child: Container(
+                    color: Colors.white,
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // VARI map image
-                        Expanded(
-                          child: ClipRRect(
+                        // Map + color ramp
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: RawImage(image: r.variMap, fit: BoxFit.contain),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            _ColorRamp(),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Stats block
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(8),
-                            child: RawImage(
-                              image: result.variMap,
-                              fit: BoxFit.contain,
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    r.mean.toStringAsFixed(4),
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: r.vigorColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: r.vigorColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: r.vigorColor.withValues(alpha: 0.4)),
+                                    ),
+                                    child: Text(r.vigorLabel,
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: r.vigorColor, fontSize: 12)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: [
+                                  _MiniStat('Mediana', r.median.toStringAsFixed(4)),
+                                  _MiniStat('Desv. Padrão', r.stdDev.toStringAsFixed(4)),
+                                  _MiniStat('Mín', r.min.toStringAsFixed(4)),
+                                  _MiniStat('Máx', r.max.toStringAsFixed(4)),
+                                  _MiniStat('Pixels', _fmt(r.pixelCount)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Watermark
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            'FloraField',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade400,
+                              fontStyle: FontStyle.italic,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        // Color ramp legend
-                        _ColorRamp(),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // ── VARI Summary ────────────────────────────────────────────────
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text(
-                      result.mean.toStringAsFixed(4),
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: result.vigorColor,
-                      ),
-                    ),
-                    Text('VARI Médio',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: result.vigorColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: result.vigorColor.withValues(alpha: 0.4)),
-                      ),
-                      child: Text(
-                        result.vigorLabel,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: result.vigorColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Statistics ──────────────────────────────────────────────────
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Estatísticas',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    const SizedBox(height: 12),
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      childAspectRatio: 2.6,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      children: [
-                        _StatTile('Mediana', result.median.toStringAsFixed(4), Colors.teal),
-                        _StatTile('Desv. Padrão', result.stdDev.toStringAsFixed(4), Colors.indigo),
-                        _StatTile('Mínimo', result.min.toStringAsFixed(4), Colors.orange),
-                        _StatTile('Máximo', result.max.toStringAsFixed(4), const Color(0xFF2E7D32)),
-                        _StatTile('Pixels', _fmt(result.pixelCount), Colors.blueGrey),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            // Export button
+            FilledButton.icon(
+              onPressed: _exporting ? null : _export,
+              icon: const Icon(Icons.ios_share),
+              label: const Text('Exportar / Compartilhar'),
             ),
             const SizedBox(height: 32),
           ],
@@ -132,12 +188,38 @@ class ResultScreen extends StatelessWidget {
   }
 }
 
-/// Vertical color ramp from +1 (green) to -1 (red) with labels.
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+  const _MiniStat(this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(fontSize: 11, color: Colors.black87),
+          children: [
+            TextSpan(text: '$label  ', style: TextStyle(color: Colors.grey.shade500)),
+            TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ColorRamp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 52,
+      width: 48,
       child: Column(
         children: [
           const Text('+1', style: TextStyle(fontSize: 10, color: Colors.green)),
@@ -153,7 +235,7 @@ class _ColorRamp extends StatelessWidget {
           const Text('0', style: TextStyle(fontSize: 10, color: Colors.grey)),
           const SizedBox(height: 2),
           const Text('-1', style: TextStyle(fontSize: 10, color: Colors.red)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           const RotatedBox(
             quarterTurns: 3,
             child: Text('VARI', style: TextStyle(fontSize: 9, color: Colors.grey)),
@@ -168,14 +250,13 @@ class _RampPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    // Top = +1 (green), middle = 0 (yellow), bottom = -1 (red)
     const gradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        Color(0xFF00C800), // green  (+1)
-        Color(0xFFFFFF00), // yellow (0)
-        Color(0xFFFF0000), // red    (-1)
+        Color(0xFF00C800),
+        Color(0xFFFFFF00),
+        Color(0xFFFF0000),
       ],
       stops: [0.0, 0.5, 1.0],
     );
@@ -184,7 +265,6 @@ class _RampPainter extends CustomPainter {
       RRect.fromRectAndRadius(rect, const Radius.circular(4)),
       paint,
     );
-    // tick at midpoint (VARI = 0)
     final mid = size.height / 2;
     canvas.drawLine(
       Offset(size.width, mid),
@@ -195,32 +275,4 @@ class _RampPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_) => false;
-}
-
-class _StatTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatTile(this.label, this.value, this.color);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(label, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.8))),
-          Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
-        ],
-      ),
-    );
-  }
 }
