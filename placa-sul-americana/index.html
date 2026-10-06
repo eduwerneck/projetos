@@ -54,12 +54,17 @@ aside ul{margin:0 0 12px;padding-left:1.1em;display:grid;gap:7px}
 aside li::marker{color:var(--magma)}
 .ask{border-top:1px solid var(--line);padding-top:10px;font-style:italic;color:var(--muted);margin:0}
 .ask b{font-style:normal;color:var(--fg);font-weight:600}
-.track{grid-area:track;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.track{grid-area:track;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
 .chip{position:relative;text-align:left;padding:8px 10px 12px;overflow:hidden;display:flex;gap:8px;align-items:baseline}
 .chip .n{font:500 .8rem var(--font-mono);color:var(--muted)}
 .chip .bar{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--magma)}
 .chip[aria-current="step"]{border-color:var(--magma)}
 .chip[aria-current="step"] .n{color:var(--magma)}
+.cmp{width:100%;border-collapse:collapse;font-size:.86rem;margin:0 0 12px;font-variant-numeric:tabular-nums}
+.cmp th,.cmp td{border-top:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+.cmp thead th{color:var(--muted);font-weight:600;border-top:0}
+.cmp thead th:nth-child(2){color:#ffd84a}.cmp thead th:nth-child(3){color:#8fd3ff}
+.cmp tbody th{color:var(--muted);font-weight:600;white-space:nowrap}
 footer{grid-area:foot;color:var(--muted);font-size:.85rem;display:grid;gap:4px}
 footer a{color:var(--fg)}
 kbd{font:500 .78rem var(--font-mono);border:1px solid var(--line);border-radius:4px;padding:0 4px}
@@ -90,7 +95,7 @@ svg text{font-family:var(--font-body);fill:var(--fg)}
   .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "stage" "track" "side" "foot"}
 }
 @media (max-width:640px){
-  .track{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+  .track{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
   .chip{padding:6px 6px 10px;font-size:.78rem;flex-direction:column;gap:0}
   aside h2{font-size:1.4rem}
   h1{font-size:1.3rem}
@@ -162,6 +167,7 @@ svg text{font-family:var(--font-body);fill:var(--fg)}
         <g id="gArrows" class="layer"></g>
         <g id="gRates" class="layer"></g>
         <g id="gSecLine" class="layer"></g>
+        <g id="gSecLine2" class="layer"></g>
         <g id="gBrasil" class="layer"></g>
         <g id="gDist" class="layer"></g>
         <g id="gQAndes" class="layer"></g>
@@ -176,6 +182,7 @@ svg text{font-family:var(--font-body);fill:var(--fg)}
 
       <g id="secLayer" class="layer"></g>
       <g id="panoLayer" class="layer"></g>
+      <g id="sec2Layer" class="layer"></g>
     </svg>
   </div>
 
@@ -535,6 +542,128 @@ const slabAt=(x,off)=>{const n=norm(x),y=yS(x);return[x+n[0]*off,y+n[1]*off];};
  el("text",{x:432,y:232,"text-anchor":"end",class:"t-sm",style:"font-size:11px"},g,"câmara magmática");
 }
 
+
+/* ---------- Corte C–D: três sismos, três profundidades (cena 6) ---------- */
+{const g=$("gSecLine2");const a=P(-84,-10),b=P(-30,-10);
+ el("path",{d:`M${a[0]},${a[1]}L${b[0]},${b[1]}`,stroke:"#ff7a2f","stroke-width":3,"stroke-dasharray":"8 5",class:"nss",fill:"none"},g);
+ for(const[p,t] of [[a,"C"],[b,"D"]]){el("circle",{cx:p[0],cy:p[1],r:4.5,fill:"#ff7a2f"},g);el("text",{x:p[0],y:p[1]-10,"text-anchor":"middle",class:"t-lbl"},g,t);}
+}
+const sec2=$("sec2Layer");
+const yS2=x=>258+324*Math.pow(Math.max(0,x-200)/240,1.6);
+const dyS2=x=>324*1.6*Math.pow(Math.max(0,x-200)/240,0.6)/240;
+const norm2=x=>{if(x<=200)return[0,1];const d=dyS2(x),n=Math.hypot(1,d);return[-d/n,1/n];};
+const slab2=(x,off)=>{const n=norm2(x),y=yS2(x);return[x+n[0]*off,y+n[1]*off];};
+function waves(g,x,y,R,color,n,dur,begin){for(let i=0;i<n;i++){const c=el("circle",{cx:x,cy:y,r:2,fill:"none",stroke:color,"stroke-width":2.2},g);const b=(begin+i*dur/n).toFixed(2)+"s";
+  el("animate",{attributeName:"r",values:`2;${R}`,dur:dur+"s",begin:b,repeatCount:"indefinite"},c);
+  el("animate",{attributeName:"opacity",values:"0.95;0",dur:dur+"s",begin:b,repeatCount:"indefinite"},c);}}
+function star(g,x,y,color,s){const pts=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?s*.45:s;pts.push(r1(x+r*Math.cos(a))+","+r1(y+r*Math.sin(a)));}
+  return el("polygon",{points:pts.join(" "),fill:color,stroke:"#0b1217","stroke-width":1.2},g);}
+function house(g,x,y,amp,color){const h=el("g",{},g);
+  el("path",{d:`M${x-8},${y}L${x-8},${y-10}L${x},${y-17}L${x+8},${y-10}L${x+8},${y}Z`,fill:"#f2e6cf",stroke:"#0b1217","stroke-width":1},h);
+  el("rect",{x:x-2.5,y:y-6,width:5,height:6,fill:color},h);
+  el("animateTransform",{attributeName:"transform",type:"translate",values:`0,0;${amp},0;${-amp},0;0,0`,dur:"0.22s",repeatCount:"indefinite"},h);}
+{
+ const g=el("g",{id:"s2Base"},sec2);
+ el("rect",{x:0,y:0,width:1000,height:210,fill:"url(#skyGrad)"},g);
+ el("rect",{x:0,y:210,width:1000,height:490,fill:"url(#asthGrad)"},g);
+ const top=[[0,235],[150,236],[180,242],[200,258]];for(let x=205;x<=465;x+=5)top.push([x,yS2(x)]);
+ const bot=top.map(([x,y])=>{const n=norm2(x);return[x+n[0]*T,y+n[1]*T];});
+ el("path",{d:PD(top)+"L"+PD(bot.slice().reverse()).slice(1)+"Z",fill:"url(#slabGrad)",stroke:"#1b2228","stroke-width":1.2},g);
+ const oc=top.map(([x,y])=>{const n=norm2(x);return[x+n[0]*9,y+n[1]*9];});
+ el("path",{d:PD(top)+"L"+PD(oc.slice().reverse()).slice(1)+"Z",fill:"#5c6a76"},g);
+ const flow=el("path",{d:PD(top.map(([x,y])=>{const n=norm2(x);return[x+n[0]*T/2,y+n[1]*T/2];})),fill:"none",stroke:"#8a98a4","stroke-width":2,"stroke-dasharray":"10 16",opacity:.7},g);
+ el("animate",{attributeName:"stroke-dashoffset",from:"0",to:"-52",dur:"2.6s",repeatCount:"indefinite"},flow);
+ const topo=[[200,258],[222,240],[240,210],[258,180],[275,140],[290,110],[302,118],[312,105],[325,140],[340,175],[360,198],[380,203],[520,203],[560,197],[700,194],[860,196],[885,202],[900,210],[915,225],[930,232],[1000,232]];
+ const moho=[[212,262],[260,268],[320,270],[380,248],[520,244],[700,244],[880,242],[930,240],[1000,238]];
+ const base=[[212,264],[300,300],[380,330],[520,345],[700,350],[880,340],[1000,320]];
+ el("path",{d:PD(moho)+"L"+PD(base.slice().reverse()).slice(1)+"Z",fill:"#5a4a3c",stroke:"#3a2e25"},g);
+ el("path",{d:PD(topo)+"L"+PD(moho.slice().reverse()).slice(1)+"Z",fill:"url(#crustGrad)",stroke:"#3a2e25"},g);
+ el("path",{d:"M0,210L240,210L222,240L200,258L180,242L150,236L0,235Z",fill:"#1f5f8a","fill-opacity":.9},g);
+ el("path",{d:"M900,210L1000,210L1000,232L930,232L915,225Z",fill:"#1f5f8a","fill-opacity":.9},g);
+ el("path",{d:"M281,124L290,110L302,118L312,105L319,124L310,118L302,126L295,120Z",fill:"#eef3f6"},g);
+ for(let x=366;x<520;x+=9){const h=5+((x*37)%7);el("ellipse",{cx:x,cy:202-h/2,rx:6,ry:h/2+1,fill:(x%2?"#2f7a3a":"#3d8f45")},g);}
+ for(let x=568;x<860;x+=14){el("circle",{cx:x+((x*13)%5),cy:192-((x*7)%3),r:3,fill:"#8a9a3f"},g);}
+ // falhas antigas no cráton
+ for(const fx of [600,650,780])el("path",{d:`M${fx},196L${fx+10},244`,stroke:"#2a1d12","stroke-width":1.4,"stroke-dasharray":"4 3",fill:"none"},g);
+ el("rect",{x:0,y:210,width:58,height:470,fill:"#0b1217","fill-opacity":.55},g);
+ for(const d of [0,100,200,300,400,500,600,700]){const y=210+d*0.62;el("line",{x1:50,y1:y,x2:58,y2:y,stroke:"#e9eef0"},g);el("text",{x:46,y:y+4,"text-anchor":"end",class:"t-mono",style:"font-size:11px"},g,d===0?"0":d);}
+ el("text",{x:29,y:688,"text-anchor":"middle",class:"t-mono",style:"font-size:11px"},g,"km");
+ el("text",{x:500,y:28,"text-anchor":"middle",class:"t-title"},g,"Corte C–D (≈ 10° S): três sismos, três profundidades");
+ el("text",{x:500,y:46,"text-anchor":"middle",class:"t-sm",style:"fill:#97a7ad;stroke:none"},g,"esquemático · relevo exagerado · distâncias horizontais comprimidas");
+ el("text",{x:72,y:30,class:"t-plate",style:"fill:#ff7a2f"},g,"C");el("text",{x:962,y:30,class:"t-plate",style:"fill:#ff7a2f"},g,"D");
+ // faixa do Brasil
+ el("path",{d:"M392,74L392,82L905,82L905,74",stroke:"#ffc93c","stroke-width":2,fill:"none"},g);
+ el("text",{x:648,y:68,"text-anchor":"middle",class:"t-lbl",style:"fill:#ffc93c"},g,"BRASIL · interior da placa");
+ el("text",{x:110,y:196,"text-anchor":"middle",class:"t-sea",style:"fill:#9cc6e0"},g,"Pacífico");
+ el("text",{x:958,y:250,"text-anchor":"middle",class:"t-sea",style:"fill:#9cc6e0;font-size:13px"},g,"Atlântico");
+ el("text",{x:296,y:96,"text-anchor":"middle",class:"t-sm",style:"font-weight:600"},g,"Andes");
+ el("text",{x:450,y:226,"text-anchor":"middle",class:"t-sm",style:"font-size:11.5px"},g,"Acre");
+ el("text",{x:720,y:228,"text-anchor":"middle",class:"t-sm",style:"font-size:11.5px"},g,"cráton: falhas antigas");
+ el("text",{x:110,y:268,"text-anchor":"middle",class:"t-sm"},g,"Placa de Nazca");
+ el("text",{x:700,y:300,"text-anchor":"middle",class:"t-sm"},g,"Placa Sul-Americana (a mesma placa até a dorsal)");
+}
+{const g=el("g",{id:"s2Lim",class:"layer"},sec2);
+ const x=228,y=yS2(228)-2;
+ waves(g,x,y,90,"#ffd84a",3,2.4,0);star(g,x,y,"#ffd84a",10);
+ house(g,248,209,3,"#ffd84a");
+ el("path",{d:`M${x-8},${y+6}L150,330`,stroke:"#fff","stroke-width":1.2,fill:"none"},g);
+ el("text",{x:150,y:346,"text-anchor":"middle",class:"t-lbl",style:"fill:#ffd84a"},g,"Limite de placas");
+ el("text",{x:150,y:362,"text-anchor":"middle",class:"t-sm"},g,"foco ≈ 30 km, no contato");
+ el("text",{x:150,y:377,"text-anchor":"middle",class:"t-sm"},g,"entre Nazca e Sul-Americana");
+ el("text",{x:150,y:392,"text-anchor":"middle",class:"t-sm"},g,"ex.: Pisco (Peru) 2007 · M8,0");
+ el("text",{x:248,y:180,"text-anchor":"middle",class:"t-sm",style:"font-size:11px;font-weight:600"},g,"tremor forte");
+}
+{const g=el("g",{id:"s2Deep",class:"layer"},sec2);
+ const[x,y]=slab2(440,22);
+ waves(g,x,y,170,"#e8457f",3,3.6,0.4);star(g,x,y,"#e8457f",11);
+ house(g,450,203,0.6,"#e8457f");
+ el("text",{x:x-24,"text-anchor":"end",y:y-6,class:"t-lbl",style:"fill:#ff8fb4"},g,"Profundo · Acre");
+ el("text",{x:x-24,"text-anchor":"end",y:y+10,class:"t-sm"},g,"foco ≈ 600 km, na placa");
+ el("text",{x:x-24,"text-anchor":"end",y:y+25,class:"t-sm"},g,"de Nazca mergulhada");
+ el("text",{x:x-24,"text-anchor":"end",y:y+40,class:"t-sm"},g,"ex.: 2015 · M7,6");
+ el("text",{x:450,y:178,"text-anchor":"middle",class:"t-sm",style:"font-size:11px;font-weight:600"},g,"quase não sentido");
+}
+{const g=el("g",{id:"s2Br",class:"layer"},sec2);
+ const x=654,y=203;
+ waves(g,x,y,60,"#56c2ff",3,2,0.2);star(g,x,y,"#56c2ff",10);
+ house(g,672,195,1.6,"#56c2ff");
+ for(const[a,b] of [[540,600],[880,820]]){const p=el("path",{d:`M${a},222L${b},222`,stroke:"#ffe08a","stroke-width":5,"marker-end":"url(#ah)",fill:"none","stroke-dasharray":"10 6"},g);
+   el("animate",{attributeName:"stroke-dashoffset",from:"32",to:"0",dur:"1.2s",repeatCount:"indefinite"},p);}
+ el("text",{x:990,y:140,"text-anchor":"end",class:"t-lbl",style:"fill:#8fd3ff"},g,"Intraplaca · Brasil");
+ el("text",{x:990,y:156,"text-anchor":"end",class:"t-sm"},g,"foco ≈ 5 km, falha antiga reativada");
+ el("text",{x:990,y:171,"text-anchor":"end",class:"t-sm"},g,"ex.: Serra do Tombador (MT) 1955 · 6,2");
+ el("text",{x:640,y:170,"text-anchor":"middle",class:"t-sm",style:"font-size:11px;font-weight:600"},g,"sentido perto do epicentro");
+ el("text",{x:570,y:238,"text-anchor":"middle",class:"t-sm",style:"font-size:11px;fill:#ffe08a"},g,"compressão");
+ el("text",{x:850,y:238,"text-anchor":"middle",class:"t-sm",style:"font-size:11px;fill:#ffe08a"},g,"compressão");
+}
+{const g=el("g",{id:"s2Lupa",class:"layer"},sec2);
+ const X=560,Y=400,W=425,Hh=285,y0=Y+70,k=4.6,yk=d=>y0+d*k;
+ el("rect",{x:X,y:Y,width:W,height:Hh,rx:8,fill:"#0b1217","fill-opacity":.92,stroke:"#ff7a2f","stroke-opacity":.7},g);
+ el("text",{x:X+16,y:Y+26,class:"t-title"},g,"Lupa: os primeiros 40 km");
+ el("text",{x:X+16,y:Y+44,class:"t-sm",style:"fill:#97a7ad;stroke:none"},g,"mesma escala para os dois focos rasos");
+ el("line",{x1:X+48,y1:yk(0),x2:X+48,y2:yk(40),stroke:"#97a7ad"},g);
+ for(const d of [0,10,20,30,40]){el("line",{x1:X+43,y1:yk(d),x2:X+48,y2:yk(d),stroke:"#97a7ad"},g);el("text",{x:X+40,y:yk(d)+4,"text-anchor":"end",class:"t-mono",style:"font-size:10.5px;fill:#97a7ad"},g,d+(d===40?" km":""));}
+ // lado esquerdo: limite de placas
+ const L0=X+58,L1=X+225;
+ el("rect",{x:L0,y:yk(0),width:L1-L0,height:40*k,fill:"#6e5338"},g);
+ el("path",{d:`M${L0},${yk(2)}L${L1},${yk(40)}L${L0},${yk(40)}Z`,fill:"#46525e"},g);
+ el("path",{d:`M${L0},${yk(2)}L${L1},${yk(40)}`,stroke:"#ffd84a","stroke-width":1.5,"stroke-dasharray":"5 3",fill:"none"},g);
+ const fx=L0+(L1-L0)*(28/38);waves(g,fx,yk(30),55,"#ffd84a",2,2.4,0);star(g,fx,yk(30),"#ffd84a",8);
+ el("text",{x:fx-12,y:yk(30)-12,"text-anchor":"end",class:"t-sm",style:"font-weight:600;fill:#ffd84a"},g,"≈ 30 km");
+ el("text",{x:L0+6,y:yk(0)+16,class:"t-sm",style:"font-size:11px"},g,"placa de cima");
+ el("text",{x:L0+6,y:yk(36),class:"t-sm",style:"font-size:11px"},g,"Nazca");
+ el("text",{x:(L0+L1)/2,y:yk(40)+18,"text-anchor":"middle",class:"t-sm",style:"font-weight:600"},g,"limite de placas");
+ // lado direito: Brasil
+ const R0=X+240,R1=X+W-14;
+ el("rect",{x:R0,y:yk(0),width:R1-R0,height:40*k,fill:"#7d6043"},g);
+ el("path",{d:`M${R0+60},${yk(0)}L${R0+90},${yk(40)}`,stroke:"#2a1d12","stroke-width":2,"stroke-dasharray":"6 4",fill:"none"},g);
+ const bx=R0+60+30*(5/40);waves(g,bx,yk(5),45,"#56c2ff",2,2,0.3);star(g,bx,yk(5),"#56c2ff",8);
+ el("text",{x:bx+12,y:yk(5)+4,class:"t-sm",style:"font-weight:600;fill:#8fd3ff"},g,"≈ 5 km");
+ el("text",{x:R0+96,y:yk(22),class:"t-sm",style:"font-size:11px"},g,"falha antiga");
+ el("text",{x:R0+96,y:yk(22)+14,class:"t-sm",style:"font-size:11px"},g,"(zona de fraqueza)");
+ el("text",{x:(R0+R1)/2,y:yk(40)+18,"text-anchor":"middle",class:"t-sm",style:"font-weight:600"},g,"Brasil (intraplaca)");
+}
+
 /* ---------- Panorama dos picos (cena 4) ---------- */
 const pano=$("panoLayer");
 const GY=590,KY=0.068,yH=h=>GY-h*KY;
@@ -610,13 +739,13 @@ function cam(lo,la,k,dur){
   if(k===1){m.style.transform="none";return;}
   const p=P(lo,la);m.style.transform=`translate(${r1(500-k*p[0])}px,${r1(350-k*p[1])}px) scale(${k})`;
 }
-const LAYERS=["mapLayer","gAndes","gCratons","gTransb","gBound","gSea","gPlateLbl","gCratonLbl","gArrows","gRates","gSecLine","gBrasil","gDist","gQAndes","gQDeep","gQBr","gQLblDeep","gQLblBr","gLegend1","gLegend5","gDepth","secLayer","sArrows","sFoci","sMagma","panoLayer","nebLine","chimNote"];
+const LAYERS=["mapLayer","gAndes","gCratons","gTransb","gBound","gSea","gPlateLbl","gCratonLbl","gArrows","gRates","gSecLine","gBrasil","gDist","gQAndes","gQDeep","gQBr","gQLblDeep","gQLblBr","gLegend1","gLegend5","gDepth","secLayer","sArrows","sFoci","sMagma","panoLayer","nebLine","chimNote","gSecLine2","sec2Layer","s2Lim","s2Deep","s2Br","s2Lupa"];
 function vis(id,op,dur){const e=$(id);e.style.transition=`opacity ${dur==null?.8:dur}s`;e.style.opacity=op;}
 function peaks(on,stagger){document.querySelectorAll("#peaks .peak").forEach((p,i)=>{p.style.transition=on?`transform 1.1s cubic-bezier(.2,.8,.2,1) ${stagger?i*0.35:0}s`:"none";p.style.transform=on?"scaleY(1)":"scaleY(0.02)";});}
 
 /* ---------- Cenas ---------- */
 const SC=[
- {chip:"Placas e crátons",dur:18,eyebrow:"Cena 1 de 5 · O mapa",title:"A Placa Sul-Americana e suas vizinhas",
+ {chip:"Placas e crátons",dur:18,eyebrow:"Cena 1 de 6 · O mapa",title:"A Placa Sul-Americana e suas vizinhas",
   body:`<p>Quase toda a América do Sul está sobre a <b>Placa Sul-Americana</b>, que vai da costa do Pacífico até o meio do Oceano Atlântico.</p>
   <ul><li><b>A oeste</b>, limite <b>convergente</b>: a Placa de Nazca encontra o continente na Fossa Peru-Chile.</li>
   <li><b>A leste</b>, limite <b>divergente</b>: na Dorsal Mesoatlântica a placa se afasta da Africana e o oceano ganha crosta nova.</li>
@@ -625,7 +754,7 @@ const SC=[
   <p class="ask"><b>Pergunte à turma:</b> por que as montanhas mais altas estão no lado oeste e não no leste?</p>`,
   setup(){cam(0,0,1,0);vis("mapLayer",1,0);},
   cues:[[0.1,()=>vis("gBound",1,1.2)],[1.2,()=>{vis("gPlateLbl",1);vis("gSea",1);}],[3,()=>vis("gLegend1",1)],[5,()=>{vis("gCratons",1,1.2);vis("gCratonLbl",1,1.2);}],[8,()=>vis("gAndes",1,1.2)]]},
- {chip:"Movimento",dur:18,eyebrow:"Cena 2 de 5 · Movimento relativo",title:"Quem empurra quem?",
+ {chip:"Movimento",dur:18,eyebrow:"Cena 2 de 6 · Movimento relativo",title:"Quem empurra quem?",
   body:`<p>As placas se movem sobre a astenosfera, o manto quente e plástico logo abaixo delas.</p>
   <ul><li>A <b>Placa de Nazca</b> avança para leste e converge com a Sul-Americana a <b>≈ 6 a 7 cm por ano</b>.</li>
   <li>A <b>Placa Sul-Americana</b> segue para oeste, afastando-se da África. O Atlântico Sul se alarga <b>≈ 3 cm por ano</b>, mais ou menos o quanto as unhas crescem.</li>
@@ -633,7 +762,7 @@ const SC=[
   <p class="ask"><b>Pergunte à turma:</b> se o Atlântico abre ≈ 3 cm por ano, quanto ele se alargou desde que você nasceu?</p>`,
   setup(){cam(0,0,1,0);vis("mapLayer",1,0);vis("gBound",1,0);vis("gPlateLbl",1,0);vis("gSea",1,0);vis("gCratons",.35,0);vis("gAndes",1,0);},
   cues:[[0.5,()=>vis("gArrows",1,1)],[3.5,()=>vis("gRates",1)]]},
- {chip:"Subducção",dur:26,eyebrow:"Cena 3 de 5 · Corte transversal",title:"Subducção no Equador: Andes e vulcões",
+ {chip:"Subducção",dur:26,eyebrow:"Cena 3 de 6 · Corte transversal",title:"Subducção no Equador: Andes e vulcões",
   body:`<p>Um corte de oeste (A) para leste (B), passando pelo Equador.</p>
   <ul><li>Na <b>fossa</b>, a Placa de Nazca começa a mergulhar sob a Sul-Americana.</li>
   <li>A ≈ 100–150 km de profundidade, a placa libera <b>água</b>. Ela baixa o ponto de fusão do manto acima, que derrete em parte e gera <b>magma</b>. O magma sobe e alimenta vulcões como o <b>Cotopaxi</b>.</li>
@@ -642,7 +771,7 @@ const SC=[
   <p class="ask"><b>Pergunte à turma:</b> por que não há vulcões ativos na costa leste da América do Sul?</p>`,
   setup(){cam(0,0,1,0);vis("mapLayer",1,0);vis("gBound",1,0);vis("gAndes",1,0);vis("gCratons",.3,0);vis("gSea",1,0);},
   cues:[[0.3,()=>vis("gSecLine",1)],[1.4,()=>{cam(-78,-1.3,3.4,2.2);vis("gSea",0,.6);}],[3.6,()=>vis("secLayer",1,1)],[4.6,()=>vis("mapLayer",0,0)],[5.5,()=>vis("sArrows",1)],[9,()=>vis("sFoci",1)],[13,()=>vis("sMagma",1,1.2)]]},
- {chip:"Picos andinos",dur:20,eyebrow:"Cena 4 de 5 · Zoom nos Andes",title:"Os gigantes dos Andes",
+ {chip:"Picos andinos",dur:20,eyebrow:"Cena 4 de 6 · Zoom nos Andes",title:"Os gigantes dos Andes",
   body:`<p>A cordilheira tem dezenas de picos acima de 6.000 m. Alguns são vulcões; outros foram erguidos por falhas e dobramentos.</p>
   <ul><li><b>Aconcágua</b> (6.961 m) é o ponto mais alto das Américas.</li>
   <li><b>Ojos del Salado</b> (6.893 m) é o vulcão mais alto do mundo.</li>
@@ -651,14 +780,26 @@ const SC=[
   <li>O <b>Pico da Neblina</b> (2.995 m), ponto mais alto do Brasil, fica num relevo antigo, longe de limites de placas e desgastado por milhões de anos de erosão.</li></ul>`,
   setup(){vis("mapLayer",0,0);vis("panoLayer",1,.8);peaks(false);},
   cues:[[0.3,()=>peaks(true,true)],[4.5,()=>vis("chimNote",1)],[8,()=>vis("nebLine",1)]]},
- {chip:"Brasil e sismos",dur:30,eyebrow:"Cena 5 de 5 · Volta ao mapa",title:"Brasil: no interior da placa",
+ {chip:"Brasil e sismos",dur:30,eyebrow:"Cena 5 de 6 · Volta ao mapa",title:"Brasil: no interior da placa",
   body:`<p>O Brasil <b>não está sobre um limite de placas</b>. A fossa fica a ≈ 780 km do Acre e a dorsal a ≈ 2.400 km do litoral nordestino.</p>
   <ul><li>Os sismos brasileiros são, em geral, <b>intraplaca</b>: rasos (menos de 10 km) e de magnitude moderada. O maior registrado foi de <b>6,2</b>, na Serra do Tombador (MT), em 1955.</li>
   <li>Eles costumam ocorrer pela <b>reativação de falhas antigas</b>, zonas de fraqueza como o Lineamento Transbrasiliano, sob <b>tensões regionais</b> de compressão transmitidas pela dorsal e pelos Andes.</li>
   <li><b>No Acre e no oeste da Amazônia</b> estão os sismos mais fortes registrados em território brasileiro (como os de M7,6 e M7,5 em 2015, na fronteira com o Peru). Mas eles ocorrem a <b>≈ 600 km de profundidade</b>, na Placa de Nazca que mergulhou sob o continente. Por isso quase não são sentidos e não são sismos intraplaca típicos.</li></ul>
   <p class="ask"><b>Pergunte à turma:</b> um tremor de magnitude 7,6 sob o Acre causou poucos estragos. Que papel tem a profundidade do foco?</p>`,
   setup(){vis("panoLayer",0,.6);cam(0,0,1,0);vis("mapLayer",1,.8);vis("gBound",1,0);vis("gAndes",1,0);vis("gCratons",.22,0);},
-  cues:[[0.8,()=>vis("gBrasil",1,1)],[2.5,()=>{vis("gLegend5",1);vis("gQAndes",1,1.2);}],[6,()=>vis("gDist",1)],[10,()=>{vis("gQDeep",1,1.2);vis("gQLblDeep",1,1.2);}],[16,()=>{vis("gQBr",1,1);vis("gQLblBr",1,1);}],[19,()=>vis("gTransb",1,1)],[22,()=>vis("gDepth",1)]]}
+  cues:[[0.8,()=>vis("gBrasil",1,1)],[2.5,()=>{vis("gLegend5",1);vis("gQAndes",1,1.2);}],[6,()=>vis("gDist",1)],[10,()=>{vis("gQDeep",1,1.2);vis("gQLblDeep",1,1.2);}],[16,()=>{vis("gQBr",1,1);vis("gQLblBr",1,1);}],[19,()=>vis("gTransb",1,1)],[22,()=>vis("gDepth",1)]]},
+ {chip:"Profundidade",dur:34,eyebrow:"Cena 6 de 6 · Corte C–D",title:"Dois tremores, duas origens",
+  body:`<p>Um corte do Pacífico ao Atlântico, passando pelo Acre e pelo interior do Brasil, compara onde nasce cada tremor.</p>
+  <table class="cmp"><thead><tr><th></th><th>Limite de placas</th><th>Brasil (intraplaca)</th></tr></thead>
+  <tbody><tr><th>Onde</th><td>contato entre Nazca e Sul-Americana</td><td>interior da placa, em falhas antigas</td></tr>
+  <tr><th>Foco</th><td>≈ 10 a 60 km (até 700 km na placa que mergulha)</td><td>raso, em geral &lt; 10 km</td></tr>
+  <tr><th>Magnitude</th><td>pode passar de 8 (Valdivia 1960: 9,5)</td><td>moderada (máx. registrado: 6,2)</td></tr>
+  <tr><th>Frequência</th><td>vários por ano</td><td>raros e espalhados</td></tr>
+  <tr><th>Causa</th><td>atrito das placas que convergem</td><td>tensões regionais reativam falhas</td></tr></tbody></table>
+  <p>O caso do <b>Acre</b> é o terceiro tipo: forte, mas a ≈ 600 km. A energia se espalha e chega fraca à superfície. Já um tremor raso no Brasil, mesmo moderado, pode ser sentido e causar danos perto do epicentro, como em Itacarambi (MG), em 2007.</p>
+  <p class="ask"><b>Pergunte à turma:</b> o Brasil está livre de terremotos? Por que os nossos são menores e mais raros?</p>`,
+  setup(){cam(0,0,1,0);vis("mapLayer",1,0);vis("gBound",1,0);vis("gAndes",1,0);vis("gCratons",.22,0);vis("gBrasil",1,0);vis("gQDeep",.5,0);vis("gQBr",.6,0);},
+  cues:[[0.3,()=>vis("gSecLine2",1)],[2.6,()=>vis("sec2Layer",1,1)],[3.6,()=>vis("mapLayer",0,0)],[5,()=>vis("s2Lim",1)],[10,()=>vis("s2Deep",1)],[15,()=>vis("s2Br",1)],[21,()=>vis("s2Lupa",1,1)]]}
 ];
 
 /* ---------- Motor da animação ---------- */

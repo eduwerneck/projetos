@@ -1,6 +1,6 @@
 # Placa Sul-Americana em movimento
 
-Animação didática (ensino médio) sobre a dinâmica da Placa Sul-Americana: limites de placas, crátons, subducção, formação dos Andes, vulcanismo no Equador e sismos no Brasil.
+Animação didática em 6 cenas (ensino médio) sobre a dinâmica da Placa Sul-Americana: limites de placas, crátons, subducção, formação dos Andes, vulcanismo no Equador e sismos no Brasil.
 
 ## Como usar
 
@@ -18,6 +18,7 @@ Abra `index.html` em qualquer navegador. O arquivo é autocontido (contornos emb
 | 3 | Subducção | Zoom no Equador e corte A–B: fossa, placa mergulhando, fusão parcial, magma subindo ao Cotopaxi, sismos rasos, intermediários e profundos |
 | 4 | Picos andinos | Cotopaxi, Chimborazo, Huascarán, Illimani, Sajama, Ojos del Salado e Aconcágua na mesma escala, comparados ao Pico da Neblina |
 | 5 | Brasil e sismos | Brasil no interior da placa; distâncias até a fossa e a dorsal; sismos de limite, profundos (Acre, Bolívia, Argentina) e intraplaca no Brasil; Lineamento Transbrasiliano; régua de profundidade |
+| 6 | Profundidade | Corte C–D (≈ 10° S) do Pacífico ao Atlântico: sismo de limite de placas (≈ 30 km), sismo profundo do Acre (≈ 600 km) e sismo intraplaca no Brasil (≈ 5 km, falha antiga reativada sob compressão); casas tremendo conforme a intensidade sentida; lupa nos primeiros 40 km e tabela comparativa |
 
 ## Ponto central da cena 5
 
