@@ -11,6 +11,7 @@ Abra `index.html` em qualquer navegador. O arquivo é autocontido (biblioteca D3
 - **Mapa / Globo**: no modo Globo a câmera acompanha o Brasil
 - **Nomes**: liga/desliga os rótulos de supercontinentes e oceanos
 - Clique em qualquer fase da linha do tempo para ir direto a ela
+- Abaixo do mapa, o painel **Tempo geológico** mostra a hierarquia éon › era › período: cada nível se abre no seguinte, com largura proporcional à duração (ICS 2024) e um marcador que se move com a animação
 
 ## Fases
 
